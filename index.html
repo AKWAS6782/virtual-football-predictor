@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Virtual Football Predictor</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121e30;--line:#26364d;--green:#35d39a;--muted:#a8b6ca}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#0b1220,#14243a);font:16px system-ui;color:#f5f8fc}
+main{max-width:760px;margin:auto;padding:22px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;letter-spacing:.4px}.pill{color:var(--green);border:1px solid #276b57;padding:5px 10px;border-radius:30px;font-size:12px}
+h1{font-size:clamp(30px,7vw,48px);line-height:1.05;margin:35px 0 10px}.muted{color:var(--muted);line-height:1.5}
+.card{background:rgba(18,30,48,.95);border:1px solid var(--line);border-radius:18px;padding:18px;margin:16px 0}
+h2{font-size:19px;margin:0 0 14px}label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}
+input{width:100%;background:#0b1627;color:white;border:1px solid var(--line);border-radius:10px;padding:13px;font-size:16px}
+button{border:0;border-radius:11px;padding:13px 16px;background:var(--green);color:#082018;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-top:12px}
+.secondary{background:#25364d;color:#fff}.notice{background:#1b2c42;border-radius:12px;padding:13px;color:#d7e4f5;font-size:14px}
+.amount{font-size:30px;font-weight:850;color:var(--green)}.tip{border-top:1px solid var(--line);padding:13px 0}.tip:first-child{border:0}
+small{color:var(--muted)}#message{white-space:pre-wrap;margin-top:12px;color:#d6e8ff;font-size:14px}
+footer{color:var(--muted);font-size:12px;margin-top:26px}
+</style>
+</head>
+<body><main>
+<div class="top"><div class="brand">⚽ VIRTUAL PREDICTOR</div><span class="pill">ANALYSIS TOOL</span></div>
+<h1>Virtual Football<br><span style="color:var(--green)">Predictor</span></h1>
+<p class="muted">A simple members area for virtual-football analysis tips. No guaranteed wins. Virtual outcomes are random and can change independently.</p>
+<section class="card">
+<h2>1. Create / access your account</h2>
+<label for="phone">Ghana phone number</label><input id="phone" inputmode="tel" placeholder="e.g. 0201234567" maxlength="10">
+<button id="register">Continue with phone number</button>
+<p class="muted" id="account">No account selected yet.</p>
+</section>
+<section class="card">
+<h2>2. Daily membership</h2><div class="amount">GH₵30 <small>/ day</small></div>
+<p class="muted">Payment destination</p><div class="notice"><b>Telecel Ghana · 020 822 3744</b><br>Send only after confirming the recipient name directly with the account owner.</div>
+<button id="pay">Create payment reference</button>
+<p class="muted">Payment approval is manual in this starter version. A live MoMo gateway must be integrated for automatic verification.</p>
+<div id="payment"></div>
+</section>
+<section class="card">
+<h2>3. Published analysis tips</h2><div id="tips" class="muted">Loading tips…</div>
+<button class="secondary" id="refresh">Refresh tips</button>
+</section>
+<div id="message" role="status"></div>
+<footer>Educational statistical analysis only. No betting guarantees, no claim of access to SportyBet's private systems, and no official SportyBet affiliation.</footer>
+</main>
+<script>
+let userId=null;
+const msg=t=>document.getElementById('message').textContent=t;
+async function api(url,options={}){const r=await fetch(url,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
+document.getElementById('register').onclick=async()=>{try{const d=await api('/api/register',{method:'POST',body:JSON.stringify({phone:document.getElementById('phone').value})});userId=d.userId;document.getElementById('account').textContent='Account ready: '+d.phone+' · '+d.message;msg('Account created. Phone OTP verification is not yet connected.')}catch(e){msg(e.message)}};
+document.getElementById('pay').onclick=async()=>{try{if(!userId)throw Error('Create/access your account first.');const d=await api('/api/payments',{method:'POST',body:JSON.stringify({userId,amount:30})});document.getElementById('payment').innerHTML='<div class="notice">Reference: <b>'+d.reference+'</b><br>Amount: GH₵30<br>Status: Pending<br>Send to Telecel 020 822 3744. Keep this reference for the administrator.</div>';msg(d.message)}catch(e){msg(e.message)}};
+async function loadTips(){try{const d=await api('/api/tips');const el=document.getElementById('tips');if(!d.tips.length){el.textContent='No tips have been published yet. The administrator can add analysis through the protected API.';return}el.innerHTML=d.tips.map(t=>'<div class="tip"><b>'+escapeHtml(t.title)+'</b><br>Selection: '+escapeHtml(t.selection)+'<br><small>'+escapeHtml(t.rationale)+'</small></div>').join('')}catch(e){document.getElementById('tips').textContent=e.message}}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('refresh').onclick=loadTips;loadTips();
+</script></body></html>
